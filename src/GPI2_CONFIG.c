@@ -32,7 +32,7 @@ along with GPI-2. If not, see <http://www.gnu.org/licenses/>.
 gaspi_config_t glb_gaspi_cfg =
 {
   1,                                //logout
-  12121,                            //sn port
+  10800,                            //sn port
   0,                                //netinfo
   0,                                //user selected network
   1,                                //sn persistent
@@ -62,7 +62,7 @@ gaspi_config_t glb_gaspi_cfg =
         1,                          //port check
       },
       {
-        19000                       //port to use
+        11010                       //port to use (was 19000)
       }
     }
   },

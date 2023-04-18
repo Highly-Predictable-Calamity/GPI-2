@@ -135,9 +135,7 @@ pgaspi_connect (const gaspi_rank_t rank, const gaspi_timeout_t timeout_ms)
     unlock_gaspi (&(gctx->ctx_lock));
     return eret;
   }
-
   eret = pgaspi_connect_endpoint_to (rank, timeout_ms);
-
   unlock_gaspi (&(gctx->ctx_lock));
 
   return eret;

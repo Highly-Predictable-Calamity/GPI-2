@@ -201,7 +201,6 @@ gaspi_sn_connect2port_intern (const char *const hn, const unsigned short port)
     close (sockfd);
     return GPI2_SN_ERROR;
   }
-
   if (0 != gaspi_sn_set_default_opts (sockfd))
   {
     GASPI_DEBUG_PRINT_ERROR ("Failed to set options on socket.");
@@ -234,7 +233,7 @@ gaspi_sn_connect2port (const char *const hn, const unsigned short port,
 
     if (sockfd < 0)
     {
-      if (delta_ms > timeout_ms)
+      if (delta_ms/2 > timeout_ms)
       {
         return GPI2_SN_TIMEOUT;
       }
@@ -389,7 +388,6 @@ _gaspi_sn_wait_connection (int port, gaspi_timeout_t timeout_ms)
   {
     return GPI2_SN_TIMEOUT;
   }
-
   int nsock = accept (lsock, &in_addr, &in_len);
 
   if (nsock < 0)
@@ -657,9 +655,8 @@ gaspi_sn_connect_to_rank (const gaspi_rank_t rank,
   while (gctx->sockfd[rank] == -1)
   {
     gctx->sockfd[rank] = gaspi_sn_connect2port (pgaspi_gethostname (rank),
-                                                gctx->config->sn_port +
+                                                gctx->config->sn_port + GASPI_MAX_PPN + 
                                                 gctx->poff[rank], timeout_ms);
-
     if (-2 == gctx->sockfd[rank])
     {
       return GASPI_ERR_EMFILE;
@@ -675,6 +672,9 @@ gaspi_sn_connect_to_rank (const gaspi_rank_t rank,
         return GASPI_TIMEOUT;
     }
   }
+  /* Verify status */
+  if(gctx->sockfd[rank]<0)
+    return GASPI_ERROR;
 
   return GASPI_SUCCESS;
 }
@@ -816,9 +816,9 @@ gaspi_sn_allgather (gaspi_context_t const *const gctx,
   const int right_rank_port_offset = gctx->poff[right_rank];
   const int my_rank_port_offset = gctx->poff[gctx->rank];
 
- /* TODO: fixed port numbers */
-  const int port_to_wait = 23333 + my_rank_port_offset;
-  const int port_to_connect = 23333 + right_rank_port_offset;
+ /* TODO: fixed port numbers - check not going to overlap with MPI ports for larger node counts...*/
+  const int port_to_wait = gctx->config->sn_port+230+ my_rank_port_offset;
+  const int port_to_connect = gctx->config->sn_port+230+ right_rank_port_offset;
 
   /* Connect in a ring */
   /* If odd number of ranks, the last rank must connect and then accept */
@@ -1136,7 +1136,7 @@ _gaspi_sn_group_connect (const gaspi_rank_t rank, const void *const arg)
     gaspi_sn_writen (gctx->sockfd[i], &cdh, sizeof (gaspi_cd_header));
   if (ret != sizeof (gaspi_cd_header))
   {
-    GASPI_DEBUG_PRINT_ERROR ("Failed to write to %u (%ld %d %p %lu)",
+    GASPI_DEBUG_PRINT_ERROR ("Failed to write to rank %u (ret: %ld fd:%d chd:%p size:%lu)",
                              i,
                              ret,
                              gctx->sockfd[i], &cdh, sizeof (gaspi_cd_header));
@@ -1344,7 +1344,7 @@ gaspi_sn_backend (void* GASPI_UNUSED (args))
 
   listeningAddress.sin_family = AF_INET;
   listeningAddress.sin_port =
-    htons ((gctx->config->sn_port + gctx->local_rank));
+    htons ((gctx->config->sn_port + GASPI_MAX_PPN + gctx->local_rank));
   listeningAddress.sin_addr.s_addr = htonl (INADDR_ANY);
 
   if (bind

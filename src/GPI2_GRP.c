@@ -304,6 +304,7 @@ _pgaspi_group_commit_to (const gaspi_group_t group,
                          const gaspi_rank_t i,
                          const gaspi_timeout_t timeout_ms)
 {
+  printf("in group commit to\n");
   gaspi_return_t const eret =
     gaspi_sn_command (GASPI_SN_GRP_CONNECT, i, timeout_ms, (void *) &group);
   if (eret != GASPI_SUCCESS)
@@ -690,6 +691,7 @@ pgaspi_barrier (const gaspi_group_t g, const gaspi_timeout_t timeout_ms)
         return eret;
       }
     }
+    printf("connected to %d\n",dst);
 
     if (!grp_ctx->committed_rank[dst])
     {
@@ -702,6 +704,8 @@ pgaspi_barrier (const gaspi_group_t g, const gaspi_timeout_t timeout_ms)
       }
     }
 
+    printf("After group commit to\n");
+
     if (pgaspi_dev_post_group_write (gctx,
                                      (void *) barrier_ptr, 1, dst,
                                      (void *)
@@ -713,6 +717,7 @@ pgaspi_barrier (const gaspi_group_t g, const gaspi_timeout_t timeout_ms)
       return GASPI_ERR_DEVICE;
     }
 
+    printf("After dev post group write\n");
   B0:
     if (_gaspi_sync_wait
         (gctx, GPI2_GRP_SYNC_POLL_ADDR (grp_ctx, src), grp_ctx->barrier_cnt,
@@ -720,8 +725,10 @@ pgaspi_barrier (const gaspi_group_t g, const gaspi_timeout_t timeout_ms)
     {
       grp_ctx->lastmask = mask | 0x80000000;
       unlock_gaspi (&grp_ctx->gl);
+      printf("timeout on sync wait\n");
       return GASPI_TIMEOUT;
     }
+    printf("okay!\n");
 
     mask <<= 1;
   }

@@ -374,13 +374,13 @@ pgaspi_proc_init (const gaspi_timeout_t timeout_ms)
       for (int i = gctx->rank; i >= 0; i--)
       {
         if ((eret =
+             
              pgaspi_connect ((gaspi_rank_t) i, timeout_ms)) != GASPI_SUCCESS)
         {
           return eret;
         }
       }
     }
-
     eret = pgaspi_barrier (GASPI_GROUP_ALL, timeout_ms);
   }
   else /* dont build_infrastructure */
